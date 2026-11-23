@@ -94,6 +94,25 @@ impl Model {
             .collect()
     }
 
+    /// Names of the model's output tensors, in declaration order.
+    pub fn output_names(&self) -> Vec<String> {
+        self.session
+            .outputs()
+            .iter()
+            .map(|o| o.name().to_string())
+            .collect()
+    }
+
+    /// Rank of a named output tensor, or `None` when the output is absent or
+    /// is not a plain tensor (map/sequence).
+    pub fn output_rank(&self, name: &str) -> Option<usize> {
+        self.session
+            .outputs()
+            .iter()
+            .find(|o| o.name() == name)
+            .and_then(|o| o.dtype().tensor_shape().map(|s| s.len()))
+    }
+
     /// Writes various model properties from metadata and input/output tensors
     pub fn inspect<W: std::io::Write>(&self, mut writer: W) -> Result<()> {
         let metadata = self.session.metadata()?;
