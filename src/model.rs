@@ -71,6 +71,29 @@ impl Model {
         ComposableModel::new(self, pipeline, params)
     }
 
+    /// Run ready-made tensors through the session directly, without a
+    /// pipeline's pre-/post-processing.
+    ///
+    /// Multi-stage flows that need to inspect a first pass's outputs before
+    /// assembling a second pass's inputs (e.g. relation extraction over
+    /// caller-selected entity slots) use this between their own stages.
+    pub fn run_raw(&self, input: SessionInputs<'_, '_>) -> Result<SessionOutputs<'_>> {
+        self.run(input)
+    }
+
+    /// Names of the model's input tensors, in declaration order.
+    ///
+    /// Lets callers adapt their pipeline choice to the loaded graph (e.g. a
+    /// relex export with native span inputs vs. an older token-only export)
+    /// without opening the ONNX file a second time.
+    pub fn input_names(&self) -> Vec<String> {
+        self.session
+            .inputs()
+            .iter()
+            .map(|i| i.name().to_string())
+            .collect()
+    }
+
     /// Writes various model properties from metadata and input/output tensors
     pub fn inspect<W: std::io::Write>(&self, mut writer: W) -> Result<()> {
         let metadata = self.session.metadata()?;
